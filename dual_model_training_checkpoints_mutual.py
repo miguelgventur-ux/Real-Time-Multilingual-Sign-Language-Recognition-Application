@@ -1,16 +1,10 @@
 """
 Sign Language Model Training Script
-=====================================
 Trains an LSTM model on self-recorded landmark sequences.
 
 Supports:
   - Single language  (ASL only, BSL only, or MUTUAL only)
   - Combined training across any subset of ASL / BSL / MUTUAL
-
-Usage:
-  python train_model.py
-
-Edit the CONFIG section below before running.
 """
 
 import os
@@ -25,7 +19,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# ── CONFIG ────────────────────────────────────────────────────────────────────
+# Configuration
 
 DATA_DIR     = r"C:\Diss\CollectedData"
 OUTPUT_DIR   = r"C:\Diss\Models\Dual_60_Model_Mutual"
@@ -46,7 +40,7 @@ SIGNS_FILTER = [
     # descriptors
     'hot', 'good', 'bad', 'fast', 'slow',
     'big', 'small', 'happy', 'sad',
-    # extra 5
+    # extras
     'give', 'take', 'look', 'hear', 'smile',
     'me', 'you', 'drink', 'eat','money',
     'car', 'cold', 'phone', 'stand', 'baby'
@@ -54,21 +48,21 @@ SIGNS_FILTER = [
 
 LANGUAGES    = ["ASL", "BSL", "MUTUAL"]
 
-SEQUENCE_LEN      = 45
-NUM_FEATURES      = 126
-EPOCHS            = 100
-BATCH_SIZE        = 16
-SNAPSHOT_INTERVAL = 10   # save a manual checkpoint every N epochs
+SEQUENCE_LEN = 45
+NUM_FEATURES = 126
+EPOCHS = 100
+BATCH_SIZE = 16
+SNAPSHOT_INTERVAL = 10   # save a manual checkpoint every x epochs
 
-# ── AUGMENTATION CONFIG ───────────────────────────────────────────────────────
+# Augmentation configuration
 
-AUGMENT          = True
-AUGMENT_FACTOR   = 3       # how many augmented copies per real recording
-NOISE_STD        = 0.01    # gaussian noise strength (small = subtle)
-SCALE_RANGE      = (0.90, 1.10)   # random hand scale
-TIME_WARP_RANGE  = (0.85, 1.15)   # random speed variation
+AUGMENT = True # Augmentation Activated/Deactivated
+AUGMENT_FACTOR = 3       # how many augmented copies per real recording
+NOISE_STD = 0.01    # gaussian noise strength
+SCALE_RANGE = (0.90, 1.10)   # random hand scale
+TIME_WARP_RANGE = (0.85, 1.15)   # random speed variation
 
-# ── SETUP ─────────────────────────────────────────────────────────────────────
+# Setup
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 snapshots_dir = os.path.join(OUTPUT_DIR, "snapshots")
@@ -77,7 +71,7 @@ os.makedirs(snapshots_dir, exist_ok=True)
 print(f"TensorFlow: {tf.__version__}")
 print(f"GPU: {tf.config.list_physical_devices('GPU')}\n")
 
-# ── LOAD DATA ─────────────────────────────────────────────────────────────────
+# Load the data
 
 def load_dataset(data_dir, languages):
     sequences = []
@@ -118,7 +112,7 @@ def load_dataset(data_dir, languages):
         raise RuntimeError("No training data found. Check your DATA_DIR and LANGUAGES config.")
 
     unique_signs = sorted(set(labels_str))
-    label_map    = {sign: idx for idx, sign in enumerate(unique_signs)}
+    label_map = {sign: idx for idx, sign in enumerate(unique_signs)}
 
     X = np.array(sequences, dtype=np.float32)
     y = np.array([label_map[s] for s in labels_str], dtype=np.int64)
@@ -139,7 +133,7 @@ for sign, idx in sorted(label_map.items(), key=lambda x: x[1]):
     count = np.sum(y == idx)
     print(f"  [{idx}] {sign:15s}  {count} recordings")
 
-# ── AUGMENTATION ──────────────────────────────────────────────────────────────
+# Synthetic augmentation
 
 def augment_sequence(seq):
     aug = seq.copy()
@@ -152,7 +146,7 @@ def augment_sequence(seq):
     n = len(aug)
     warped_len = max(2, int(n * warp))
     indices_from = np.linspace(0, n - 1, warped_len)
-    indices_to   = np.linspace(0, warped_len - 1, n).astype(int)
+    indices_to = np.linspace(0, warped_len - 1, n).astype(int)
     warped = np.array([aug[min(int(i), n - 1)] for i in indices_from], dtype=np.float32)
     aug = warped[indices_to]
     return aug
@@ -176,7 +170,7 @@ def augment_dataset(X, y, factor):
 if AUGMENT:
     X, y = augment_dataset(X, y, AUGMENT_FACTOR)
 
-# ── NORMALISE ─────────────────────────────────────────────────────────────────
+# Normalise
 
 print("\nNormalising features...")
 
@@ -184,18 +178,18 @@ X_train, X_val, y_train, y_val = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-flat_train   = X_train.reshape(-1, NUM_FEATURES)
+flat_train = X_train.reshape(-1, NUM_FEATURES)
 nonzero_mask = flat_train.any(axis=1)
-feat_mean    = flat_train[nonzero_mask].mean(axis=0)
-feat_std     = flat_train[nonzero_mask].std(axis=0) + 1e-8
+feat_mean = flat_train[nonzero_mask].mean(axis=0)
+feat_std = flat_train[nonzero_mask].std(axis=0) + 1e-8
 
 def normalise(arr):
-    out         = (arr - feat_mean) / feat_std
+    out = (arr - feat_mean) / feat_std
     zero_frames = (arr == 0).all(axis=-1, keepdims=True)
     return np.where(zero_frames, 0.0, out)
 
 X_train = normalise(X_train)
-X_val   = normalise(X_val)
+X_val = normalise(X_val)
 
 print(f"Train: {X_train.shape}  |  Val: {X_val.shape}")
 
@@ -203,22 +197,22 @@ np.save(os.path.join(OUTPUT_DIR, "feat_mean.npy"), feat_mean)
 np.save(os.path.join(OUTPUT_DIR, "feat_std.npy"),  feat_std)
 print("Saved feat_mean.npy and feat_std.npy")
 
-# ── MODEL ─────────────────────────────────────────────────────────────────────
+# Model
 
 def build_model(seq_len, num_features, num_classes):
     inp = keras.Input(shape=(seq_len, num_features))
-    x   = layers.Masking(mask_value=0.0)(inp)
-    x   = layers.LSTM(128, return_sequences=True, dropout=0.3)(x)
-    x   = layers.LSTM(64,  dropout=0.3)(x)
-    x   = layers.Dense(64, activation='relu')(x)
-    x   = layers.Dropout(0.3)(x)
+    x = layers.Masking(mask_value=0.0)(inp)
+    x = layers.LSTM(128, return_sequences=True, dropout=0.3)(x)
+    x = layers.LSTM(64,  dropout=0.3)(x)
+    x = layers.Dense(64, activation='relu')(x)
+    x = layers.Dropout(0.3)(x)
     out = layers.Dense(num_classes, activation='softmax')(x)
     return keras.Model(inp, out)
 
 model = build_model(SEQUENCE_LEN, NUM_FEATURES, NUM_CLASSES)
 model.summary()
 
-# ── MANUAL SNAPSHOT CALLBACK ──────────────────────────────────────────────────
+# Snapshot Callback
 
 class SnapshotCallback(keras.callbacks.Callback):
     """Saves a full model snapshot every SNAPSHOT_INTERVAL epochs."""
@@ -236,7 +230,7 @@ class SnapshotCallback(keras.callbacks.Callback):
             val_acc = logs.get("val_accuracy", 0)
             print(f"\n  [Snapshot] Epoch {ep:3d} → saved ({val_acc:.4f} val_acc)")
 
-# ── TRAIN ─────────────────────────────────────────────────────────────────────
+# Train model
 
 checkpoint_path = os.path.join(OUTPUT_DIR, "best_model.h5")
 
@@ -271,7 +265,7 @@ history = model.fit(
     callbacks=callbacks
 )
 
-# ── CHECKPOINT AUDIT TABLE ────────────────────────────────────────────────────
+# Checkpoint table
 
 print("\n── Checkpoint Audit ──")
 print(f"{'Epoch':>8}  {'Val Acc':>10}  {'Val Loss':>10}  {'Selected':>10}")
@@ -288,13 +282,13 @@ best_val_acc = -1
 for fname in snapshot_files:
     # Extract epoch number from filename e.g. snapshot_epoch_010.h5
     epoch_num = int(fname.replace("snapshot_epoch_", "").replace(".h5", ""))
-    # Fetch val_accuracy from training history (0-indexed, so epoch 10 → index 9)
+    # Fetch val_accuracy from training history
     hist_idx  = epoch_num - 1
     if hist_idx < len(history.history['val_accuracy']):
         val_acc  = history.history['val_accuracy'][hist_idx]
         val_loss = history.history['val_loss'][hist_idx]
     else:
-        # Epoch was not reached (early stopping)
+        # Epoch was not reached (for early stopping)
         val_acc  = None
         val_loss = None
 
@@ -327,13 +321,9 @@ else:
     selected_model = model
 
 # Save audit table as CSV
-# The file has two sections:
-#   1. A metadata block (key, value) describing the run.
-#   2. A blank separator row, then the per-epoch audit data.
 import datetime
 csv_path = os.path.join(OUTPUT_DIR, "checkpoint_audit.csv")
 with open(csv_path, 'w', newline='') as f:
-    # ── metadata block ────────────────────────────────────────────────────────
     meta_writer = csv.writer(f)
     meta_writer.writerow(['key', 'value'])
     meta_writer.writerow(['languages',      ', '.join(LANGUAGES)])
@@ -342,16 +332,15 @@ with open(csv_path, 'w', newline='') as f:
     meta_writer.writerow(['best_epoch',     best_epoch if best_epoch else 'N/A'])
     meta_writer.writerow(['best_val_acc',   f"{best_val_acc:.6f}" if best_val_acc > 0 else 'N/A'])
     meta_writer.writerow(['timestamp',      datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
-    meta_writer.writerow([])   # blank separator row
-    # ── per-epoch audit data ──────────────────────────────────────────────────
+    meta_writer.writerow([])
+    # Audit data per individual epoch
     writer = csv.DictWriter(f, fieldnames=['epoch', 'val_acc', 'val_loss', 'selected'])
     writer.writeheader()
     for row in audit_rows:
         writer.writerow({**row, 'selected': 'BEST' if row['epoch'] == best_epoch else ''})
 print(f"  Audit table saved to checkpoint_audit.csv\n")
 
-# ── PLOT TRAINING CURVES ──────────────────────────────────────────────────────
-
+# Plot the training curves
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4))
 fig.suptitle(
     f"Languages: {' + '.join(LANGUAGES)}  |  Classes: {NUM_CLASSES}  |  "
@@ -394,8 +383,7 @@ plt.savefig(curves_path, dpi=150, bbox_inches='tight')
 plt.show()
 print(f"Training curves saved to {curves_path}")
 
-# ── CONFUSION MATRIX (using selected model) ───────────────────────────────────
-
+# Confusion matrix
 y_pred     = np.argmax(selected_model.predict(X_val), axis=1)
 sign_names = [id_to_sign[i] for i in range(NUM_CLASSES)]
 cm         = confusion_matrix(y_val, y_pred)
@@ -419,10 +407,9 @@ ax.set_yticklabels(ax.get_yticklabels(), rotation=0,  fontsize=tick_fs)
 
 if len(LANGUAGES) > 1:
     # Compute cumulative boundary positions for each language group.
-    # sign_names is sorted alphabetically so ASL_ < BSL_ < MUTUAL_ naturally.
     cumulative = 0
     lang_order = sorted(set(s.split('_')[0] for s in sign_names))  # preserves alpha sort
-    lang_spans = {}   # lang -> (start_idx, end_idx)  in the matrix
+    lang_spans = {}
     for lang in lang_order:
         count = sum(1 for s in sign_names if s.startswith(f"{lang}_"))
         if count:
@@ -457,8 +444,7 @@ print(f"Confusion matrix saved to {cm_path}")
 print('\nPer-class report:')
 print(classification_report(y_val, y_pred, target_names=sign_names))
 
-# ── PER-LANGUAGE CONFUSION MATRICES ──────────────────────────────────────────
-
+# Confusion matrices per language
 for lang in LANGUAGES:
     lang_indices = sorted([idx for sign, idx in label_map.items() if sign.startswith(f"{lang}_")])
     lang_names   = [id_to_sign[i].replace(f"{lang}_", "") for i in lang_indices]
@@ -517,8 +503,7 @@ for lang in LANGUAGES:
         other_langs = [l for l in LANGUAGES if l != lang]
         print(f"  ⚠  {cross} sample(s) predicted outside {lang} (into {'/'.join(other_langs)} signs)\n")
 
-# ── SAVE CONFIG ───────────────────────────────────────────────────────────────
-
+# Save configuration
 config = {
     'sequence_len'          : SEQUENCE_LEN,
     'num_features'          : NUM_FEATURES,
