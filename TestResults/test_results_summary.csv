@@ -1,9 +1,0 @@
-Metric,Value
-Test samples,490
-Accuracy,0.708163
-Precision (macro),0.682336
-Recall (macro),0.708163
-F1 (macro),0.660835
-Model file,selected_model.h5
-Best snapshot epoch,40
-Best snapshot val_acc,0.8949
