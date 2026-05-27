@@ -1,0 +1,16 @@
+key,value
+languages,"ASL, BSL, MUTUAL"
+num_classes,109
+epochs_trained,72
+best_epoch,60
+best_val_acc,0.989960
+timestamp,2026-05-19 14:54:27
+
+epoch,val_acc,val_loss,selected
+10,0.881526,0.395733,
+20,0.919679,0.22196,
+30,0.983936,0.055023,
+40,0.981928,0.069582,
+50,0.985944,0.051183,
+60,0.98996,0.040108,BEST
+70,0.985944,0.043271,

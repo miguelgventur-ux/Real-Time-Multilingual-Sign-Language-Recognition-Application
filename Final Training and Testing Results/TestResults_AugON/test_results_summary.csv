@@ -1,0 +1,16 @@
+Metric,Value
+Languages,"ASL, BSL, MUTUAL"
+Test samples,546
+Accuracy,0.937729
+Precision (macro),0.955162
+Recall (macro),0.937615
+F1 (macro),0.935204
+
+Per-language accuracy,
+  ASL accuracy,0.924000  (250 samples)
+  BSL accuracy,0.946939  (245 samples)
+  MUTUAL accuracy,0.960784  (51 samples)
+
+Model file,selected_model.h5
+Best snapshot epoch,50
+Best snapshot val_acc,1.0
