@@ -22,18 +22,18 @@ A real-time desktop application for recognising **American Sign Language (ASL)**
 ## Repository Structure
 
 ```
-├── collect_data.py                  # Data collection application (MediaPipe + webcam)
-├── train_multilingual_model.py      # Model training script (Aug-ON and Aug-OFF)
-├── test_model.py                    # Evaluation script (metrics, confusion matrices)
-├── realtime_multilingual_inference.py  # Live inference desktop application
-├── requirements.txt                 # Python dependencies
+├── collect_data.py                           # Data collection application
+├── train_multilingual_model.py               # Model training script
+├── test_model.py                             # Evaluation script
+├── realtime_multilingual_inference.py        # Live inference desktop application
+├── requirements.txt                          # Python dependencies
 │
 └── Final Training and Testing Results/
     ├── TestResults_AugON/
     │   ├── test_results_per_sample.csv       # Per-sample predictions and confidence scores
     │   ├── test_results_summary.csv          # Aggregate metrics
     │   ├── confidence_distribution.png
-    │   ├── confusion_matrix_test.png         # Full 109-class confusion matrix
+    │   ├── confusion_matrix_test.png         # Full 109 class confusion matrix
     │   ├── confusion_matrix_ASL_test.png
     │   ├── confusion_matrix_BSL_test.png
     │   └── confusion_matrix_MUTUAL_test.png
