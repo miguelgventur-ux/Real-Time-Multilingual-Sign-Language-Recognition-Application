@@ -1,13 +1,9 @@
 """
-Real-Time Sign Language Recognition — Trilingual Webcam Inference
-Run from terminal: python realtime_inference_grouped.py
-
-Detects ASL, BSL, and MUTUAL signs from a single trained model.
+Real-Time Sign Language Recognition
+Detects ASL, BSL, and MUTUAL signs from a single trained model:
   - ASL predictions shown in blue
   - BSL predictions shown in yellow
   - MUTUAL predictions shown in purple
-
-Press Q to quit.
 """
 
 import cv2
@@ -19,31 +15,30 @@ import collections
 import time
 import os
 
-# ── CONFIG ────────────────────────────────────────────────────────────────────
-MODEL_DIR      = r"C:\Diss\Models\Dual_60_Model"
+# Configuration
+MODEL_DIR = r"C:\Diss\Models\Dual_60_Model"
 CONF_THRESHOLD = 0.2
-SMOOTH_WINDOW  = 5
-SETTLE_DELAY   = 0.5    # seconds before showing prediction after hand appears
+SMOOTH_WINDOW = 5
+SETTLE_DELAY = 0.5    # seconds before showing prediction after hand appears
 
-# ── COLOURS (BGR) ─────────────────────────────────────────────────────────────
-GREEN  = (0, 255, 100)
-RED    = (0, 60, 255)
+# Colours for convinienve
+GREEN = (0, 255, 100)
+RED = (0, 60, 255)
 YELLOW = (0, 220, 255)
-WHITE  = (255, 255, 255)
-DARK   = (20, 20, 20)
-BLUE   = (255, 100, 0)
-GREY   = (120, 120, 120)
-DIM    = (60, 60, 60)
+WHITE = (255, 255, 255)
+DARK = (20, 20, 20)
+BLUE = (255, 100, 0)
+GREY = (120, 120, 120)
+DIM = (60, 60, 60)
 PURPLE = (220, 60, 220)
 
-# Colour used for the sign text and language badge per language
 LANG_COLOUR = {
     "ASL"    : BLUE,
     "BSL"    : YELLOW,
     "MUTUAL" : PURPLE,
 }
 
-# ── LOAD MODEL AND METADATA ───────────────────────────────────────────────────
+# Load the model
 print("Loading model...")
 
 with open(os.path.join(MODEL_DIR, "inference_config.json")) as f:
@@ -51,8 +46,8 @@ with open(os.path.join(MODEL_DIR, "inference_config.json")) as f:
 
 SEQUENCE_LEN = config["sequence_len"]
 NUM_FEATURES = config["num_features"]
-label_map    = config["label_map"]
-id_to_sign   = {int(v): k for k, v in label_map.items()}
+label_map = config["label_map"]
+id_to_sign = {int(v): k for k, v in label_map.items()}
 
 feat_mean = np.load(os.path.join(MODEL_DIR, "feat_mean.npy"))
 feat_std  = np.load(os.path.join(MODEL_DIR, "feat_std.npy"))
@@ -61,11 +56,11 @@ from tensorflow.keras import layers
 
 def build_model(seq_len, num_features, num_classes):
     inp = tf.keras.Input(shape=(seq_len, num_features))
-    x   = layers.Masking(mask_value=0.0)(inp)
-    x   = layers.LSTM(128, return_sequences=True, dropout=0.3)(x)
-    x   = layers.LSTM(64, dropout=0.3)(x)
-    x   = layers.Dense(64, activation='relu')(x)
-    x   = layers.Dropout(0.3)(x)
+    x = layers.Masking(mask_value=0.0)(inp)
+    x = layers.LSTM(128, return_sequences=True, dropout=0.3)(x)
+    x = layers.LSTM(64, dropout=0.3)(x)
+    x = layers.Dense(64, activation='relu')(x)
+    x = layers.Dropout(0.3)(x)
     out = layers.Dense(len(label_map), activation='softmax')(x)
     return tf.keras.Model(inp, out)
 
@@ -73,7 +68,7 @@ model = build_model(SEQUENCE_LEN, NUM_FEATURES, len(label_map))
 model.load_weights(os.path.join(MODEL_DIR, "best_model.h5"))
 print(f"Model loaded. {len(label_map)} classes.\n")
 
-# ── MEDIAPIPE SETUP ───────────────────────────────────────────────────────────
+# MediaPipe Setup
 mp_hands = mp.solutions.hands
 mp_draw  = mp.solutions.drawing_utils
 hands    = mp_hands.Hands(
@@ -83,11 +78,11 @@ hands    = mp_hands.Hands(
     min_tracking_confidence=0.5
 )
 
-# ── HELPERS ───────────────────────────────────────────────────────────────────
+# The helpers
 def extract_landmarks(frame_rgb):
     result = hands.process(frame_rgb)
-    hand1  = np.zeros(63, dtype=np.float32)
-    hand2  = np.zeros(63, dtype=np.float32)
+    hand1 = np.zeros(63, dtype=np.float32)
+    hand2 = np.zeros(63, dtype=np.float32)
     all_landmarks = []
 
     if result.multi_hand_landmarks:
@@ -111,34 +106,29 @@ def extract_landmarks(frame_rgb):
 
 
 def normalise(seq):
-    out         = (seq - feat_mean) / feat_std
+    out = (seq - feat_mean) / feat_std
     zero_frames = (seq == 0).all(axis=-1, keepdims=True)
     return np.where(zero_frames, 0.0, out)
 
 
 def predict(frame_buffer):
-    """
-    Run inference across all classes and return the top prediction.
-    Returns (sign_name, confidence, detected_lang) e.g. ('book', 0.87, 'BSL').
-    """
-    seq   = np.array(frame_buffer, dtype=np.float32)
-    seq   = normalise(seq)
-    inp   = seq[np.newaxis, ...]
+    #Return the top prediction.(e.g..'book', 0.87, 'BSL')
+    seq = np.array(frame_buffer, dtype=np.float32)
+    seq = normalise(seq)
+    inp = seq[np.newaxis, ...]
     probs = model.predict(inp, verbose=0)[0]
 
-    best_idx      = int(np.argmax(probs))
-    best_conf     = float(probs[best_idx])
-    label         = id_to_sign[best_idx]
+    best_idx = int(np.argmax(probs))
+    best_conf = float(probs[best_idx])
+    label = id_to_sign[best_idx]
 
     if "_" in label:
         detected_lang, sign = label.split("_", 1)
     else:
         detected_lang, sign = "", label
-
     return sign, best_conf, detected_lang
 
-
-# ── DRAWING ───────────────────────────────────────────────────────────────────
+# Drawing
 def draw_top_bar(frame, hand_count, current_sign, current_conf,
                  show_prediction, detected_lang):
     h, w = frame.shape[:2]
@@ -152,7 +142,6 @@ def draw_top_bar(frame, hand_count, current_sign, current_conf,
                     cv2.FONT_HERSHEY_DUPLEX, 1.8, sign_colour, 2, cv2.LINE_AA)
 
         if detected_lang:
-            # Filled language badge (e.g. [ MUTUAL ])
             badge_text = f"  {detected_lang}  "
             (bw, bh), _ = cv2.getTextSize(badge_text, cv2.FONT_HERSHEY_DUPLEX, 0.55, 1)
             cv2.rectangle(frame, (13, 72), (15 + bw, 75 + bh), lang_colour, -1)
@@ -192,7 +181,7 @@ def draw_bottom_bar(frame, buffer_fill):
                 (10, h - 10), cv2.FONT_HERSHEY_DUPLEX,
                 0.45, (160, 160, 160), 1, cv2.LINE_AA)
 
-    # Language legend (bottom-right)
+    # Language legend on the bottom right of the UI
     legend_items = [("ASL", BLUE), ("BSL", YELLOW), ("MUTUAL", PURPLE)]
     x_cursor = w - 10
     for label, colour in reversed(legend_items):
@@ -208,7 +197,7 @@ def draw_processing_dot(frame):
         cv2.circle(frame, (frame.shape[1] - 30, 148), 8, GREEN, -1)
 
 
-# ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+# Main loop
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("ERROR: Could not open webcam.")
@@ -221,11 +210,11 @@ WINDOW_NAME = "Sign Language Recognition"
 cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
 cv2.resizeWindow(WINDOW_NAME, 1280, 720)
 
-frame_buffer     = collections.deque(maxlen=SEQUENCE_LEN)
-recent_preds     = collections.deque(maxlen=SMOOTH_WINDOW)
-current_sign     = "---"
-current_conf     = 0.0
-detected_lang    = ""
+frame_buffer = collections.deque(maxlen=SEQUENCE_LEN)
+recent_preds = collections.deque(maxlen=SMOOTH_WINDOW)
+current_sign = "---"
+current_conf = 0.0
+detected_lang = ""
 hand_appeared_at = None
 
 print("Webcam running. Press Q to quit.")
@@ -282,7 +271,7 @@ while True:
             current_sign = "???"
             current_conf = conf
 
-    # ── DRAW UI ───────────────────────────────────────────────────────────────
+    # Drawi UI
     draw_top_bar(frame, len(hand_landmarks_list), current_sign,
                  current_conf, hand_settled, detected_lang)
     draw_bottom_bar(frame, len(frame_buffer) / SEQUENCE_LEN)
