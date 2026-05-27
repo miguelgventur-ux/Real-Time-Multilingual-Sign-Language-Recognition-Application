@@ -47,14 +47,14 @@ else:
 OUTPUT_DIR = r"C:\Diss\CollectedDataTesting"
 RECORDINGS_PER_SIGN = 5
 SEQUENCE_LEN = 45
-COUNTDOWN_SECONDS = 2          # recording countdown
-MIN_HAND_THRESHOLD = 0.60      # minimum fraction of frames with hands visible
+COUNTDOWN_SECONDS = 2 # countdown for recording
+MIN_HAND_THRESHOLD = 0.60 # minimum fraction of frames with a visible hand
 
-# ── SETUP ─────────────────────────────────────────────────────────────────────
+# Setup
 
 mp_hands = mp.solutions.hands
-mp_draw  = mp.solutions.drawing_utils
-hands    = mp_hands.Hands(
+mp_draw = mp.solutions.drawing_utils
+hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=2,
     min_detection_confidence=0.5,
@@ -73,13 +73,13 @@ BLUE   = (255, 100, 0)
 def extract_two_hand_landmarks(frame_rgb):
     """Returns (126,) array, sorted by wrist x so ordering is consistent.
     Missing hand slots are filled with zeros."""
-    result       = hands.process(frame_rgb)
-    hand1        = np.zeros(63, dtype=np.float32)
-    hand2        = np.zeros(63, dtype=np.float32)
+    result = hands.process(frame_rgb)
+    hand1 = np.zeros(63, dtype=np.float32)
+    hand2  = np.zeros(63, dtype=np.float32)
     raw_landmarks = []
 
     if result.multi_hand_landmarks:
-        detected      = sorted(result.multi_hand_landmarks, key=lambda h: h.landmark[0].x)
+        detected = sorted(result.multi_hand_landmarks, key=lambda h: h.landmark[0].x)
         raw_landmarks = detected
 
         if len(detected) >= 1:
@@ -93,11 +93,10 @@ def extract_two_hand_landmarks(frame_rgb):
 
     return np.concatenate([hand1, hand2]), len(raw_landmarks), raw_landmarks
 
-
 def quality_check(sequence):
     """Checks that at least one hand was visible for most of the recording.
     Returns (passed, hand_coverage, message)."""
-    first_hand   = sequence[:, :63]
+    first_hand = sequence[:, :63]
     has_any_hand = np.any(first_hand != 0, axis=1).mean()
 
     if has_any_hand < MIN_HAND_THRESHOLD:
@@ -116,8 +115,7 @@ def normalise_length(seq, target_len):
     return seq[indices]
 
 
-# ── DRAWING ───────────────────────────────────────────────────────────────────
-
+# Drawing UI
 def draw_top_bar(frame, sign, sign_idx, total_signs, saved_count, state, hand_count):
     h, w = frame.shape[:2]
     cv2.rectangle(frame, (0, 0), (w, 100), DARK, -1)
@@ -191,7 +189,7 @@ def draw_review_overlay(frame, passed, message):
     cv2.putText(frame, message, (15, 156), cv2.FONT_HERSHEY_DUPLEX, 0.6, colour, 1, cv2.LINE_AA)
 
 
-# ── MAIN ──────────────────────────────────────────────────────────────────────
+# Main
 
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -212,20 +210,20 @@ def main():
     print(f"Output: {OUTPUT_DIR}")
     print(f"Signs ({len(ACTIVE_SIGNS)}): {ACTIVE_SIGNS}\n")
 
-    sign_idx       = 0
-    state          = "READY"
-    frame_buffer   = []
+    sign_idx = 0
+    state = "READY"
+    frame_buffer = []
     countdown_start = None
-    review_seq     = None
-    review_result  = None
-    message        = "Press SPACE to start countdown"
-    skip_warned    = None
+    review_seq = None
+    review_result = None
+    message = "Press SPACE to start countdown"
+    skip_warned = None
 
     while sign_idx < len(ACTIVE_SIGNS):
-        sign     = ACTIVE_SIGNS[sign_idx]
+        sign = ACTIVE_SIGNS[sign_idx]
         sign_dir = os.path.join(OUTPUT_DIR, LANGUAGE, sign)
         os.makedirs(sign_dir, exist_ok=True)
-        existing    = [f for f in os.listdir(sign_dir) if f.endswith('.npy')]
+        existing = [f for f in os.listdir(sign_dir) if f.endswith('.npy')]
         saved_count = len(existing)
 
         ret, frame = cap.read()
@@ -233,12 +231,12 @@ def main():
             break
 
         frame = cv2.flip(frame, 1)
-        rgb   = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         landmarks, hand_count, raw_lms = extract_two_hand_landmarks(rgb)
 
         skeleton_colours = [
-            ((0, 255, 100), (255, 255, 255)),   # first hand:  green
-            ((255, 100, 0), (200, 255, 255)),    # second hand: blue
+            ((0, 255, 100), (255, 255, 255)), # first hand: green
+            ((255, 100, 0), (200, 255, 255)), # second hand: blue
         ]
         for i, lm in enumerate(raw_lms):
             dot_col, line_col = skeleton_colours[i % 2]
@@ -248,8 +246,7 @@ def main():
                 mp_draw.DrawingSpec(color=line_col, thickness=2),
             )
 
-        # ── STATE LOGIC ───────────────────────────────────────────────────────
-
+        # Logic
         if state == "COUNTDOWN":
             elapsed   = time.time() - countdown_start
             remaining = COUNTDOWN_SECONDS - elapsed
@@ -281,7 +278,7 @@ def main():
             passed, coverage, msg = review_result
             draw_review_overlay(frame, passed, msg)
 
-        # ── DRAW UI ───────────────────────────────────────────────────────────
+        # Draws the UI
 
         draw_top_bar(frame, sign, sign_idx, len(ACTIVE_SIGNS), saved_count, state, hand_count)
         draw_message_bar(frame, message)
@@ -291,7 +288,7 @@ def main():
         cv2.imshow(WINDOW_NAME, frame)
         key = cv2.waitKey(1) & 0xFF
 
-        # ── KEY HANDLERS ──────────────────────────────────────────────────────
+        # Handlers
 
         if key == ord('q'):
             print("\nQuitting.")
@@ -299,9 +296,9 @@ def main():
 
         elif key == ord(' '):
             if state == "READY":
-                state           = "COUNTDOWN"
+                state = "COUNTDOWN"
                 countdown_start = time.time()
-                message         = "Get your hands ready..."
+                message = "Get your hands ready..."
 
         elif key == ord('s'):
             if state == "REVIEW" and review_seq is not None:
@@ -310,15 +307,15 @@ def main():
                     message = f"Cannot save — {msg}. Press D to discard and retry."
                 else:
                     seq_fixed = normalise_length(review_seq, SEQUENCE_LEN)
-                    existing  = [f for f in os.listdir(sign_dir) if f.endswith('.npy')]
-                    filename  = f"{sign}_{LANGUAGE}_{len(existing):03d}.npy"
+                    existing = [f for f in os.listdir(sign_dir) if f.endswith('.npy')]
+                    filename = f"{sign}_{LANGUAGE}_{len(existing):03d}.npy"
                     save_path = os.path.join(sign_dir, filename)
                     np.save(save_path, seq_fixed)
                     saved_count += 1
                     print(f"  Saved: {filename}  ({saved_count}/{RECORDINGS_PER_SIGN})")
 
-                    state        = "READY"
-                    review_seq   = None
+                    state = "READY"
+                    review_seq = None
                     frame_buffer = []
 
                     if saved_count >= RECORDINGS_PER_SIGN:
@@ -331,20 +328,20 @@ def main():
 
         elif key == ord('d'):
             if state in ("REVIEW", "RECORDING", "COUNTDOWN"):
-                state        = "READY"
+                state = "READY"
                 frame_buffer = []
-                review_seq   = None
-                message      = "Discarded. Press SPACE to try again."
+                review_seq = None
+                message = "Discarded. Press SPACE to try again."
 
         elif key == ord('n'):
             if saved_count < RECORDINGS_PER_SIGN:
                 if skip_warned == sign:
-                    sign_idx   += 1
+                    sign_idx += 1
                     skip_warned = None
-                    state        = "READY"
+                    state = "READY"
                     frame_buffer = []
-                    review_seq   = None
-                    message      = "Press SPACE to start countdown"
+                    review_seq = None
+                    message = "Press SPACE to start countdown"
                 else:
                     skip_warned = sign
                     message = (
@@ -352,12 +349,12 @@ def main():
                         f"Press N again to skip anyway."
                     )
             else:
-                sign_idx   += 1
+                sign_idx += 1
                 skip_warned = None
-                state        = "READY"
+                state = "READY"
                 frame_buffer = []
-                review_seq   = None
-                message      = "Press SPACE to start countdown"
+                review_seq = None
+                message = "Press SPACE to start countdown"
 
     cap.release()
     cv2.destroyAllWindows()
