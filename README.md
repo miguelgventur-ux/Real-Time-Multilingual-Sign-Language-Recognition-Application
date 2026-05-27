@@ -66,7 +66,7 @@ A real-time desktop application for recognising **American Sign Language (ASL)**
 ### Installation
 
 ```bash
-git clone https://github.com/miguelgventur-ux/[YOUR_REPO_NAME.git](https://github.com/miguelgventur-ux/Real-Time-Multilingual-Sign-Language-Recognition-Application.git)
+git clone https://github.com/miguelgventur-ux/Real-Time-Multilingual-Sign-Language-Recognition-Application.git
 cd Real-Time-Multilingual-Sign-Language-Recognition-Application
 pip install -r requirements.txt
 ```
