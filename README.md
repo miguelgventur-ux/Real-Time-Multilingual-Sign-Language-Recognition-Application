@@ -66,8 +66,8 @@ A real-time desktop application for recognising **American Sign Language (ASL)**
 ### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
+git clone https://github.com/miguelgventur-ux/[YOUR_REPO_NAME.git](https://github.com/miguelgventur-ux/Real-Time-Multilingual-Sign-Language-Recognition-Application.git)
+cd Real-Time-Multilingual-Sign-Language-Recognition-Application
 pip install -r requirements.txt
 ```
 
@@ -112,10 +112,6 @@ A stacked LSTM network implemented in TensorFlow/Keras:
 | Dense | 64 units, ReLU |
 | Dropout | rate = 0.3 |
 | Output | 110 units, Softmax |
-
-**Total trainable parameters: 192,302**
-
-Input: 21 landmarks × 3 coordinates × 2 hands = 126 features per frame, across 45 frames per sequence.
 
 ---
 
