@@ -1,20 +1,8 @@
 # Real-Time Multilingual Sign Language Recognition
 
-A real-time desktop application for recognising **American Sign Language (ASL)**, **British Sign Language (BSL)**, and a novel category of **cross-linguistically equivalent MUTUAL signs** — all within a single model, running entirely on consumer-grade hardware without a GPU or network dependency.
+A real-time desktop application for recognising **American Sign Language (ASL)**, **British Sign Language (BSL)**, and a novel category of **cross-linguistically equivalent MUTUAL signs** within a single model, running entirely on consumer-grade hardware without a GPU or network dependency.
 
-> Developed as a Computer Science dissertation project at York St John University (2025–2026).
-
----
-
-## Overview
-
-Most sign language recognition systems are monolingual and require high-specification hardware. This project addresses both constraints by:
-
-- Classifying **109 sign classes** across ASL, BSL, and a third MUTUAL category in a single unified model
-- Running inference in **real time at ≤33ms per frame (30 FPS)** on a standard laptop CPU
-- Introducing the **MUTUAL class design** — pooling cross-linguistically equivalent signs from both languages under a single label, improving training efficiency and achieving the highest per-group test accuracy (96.08%)
-
-The pipeline extracts 126-dimensional skeletal hand landmark sequences using **MediaPipe Hands** and classifies them with a **stacked LSTM network** implemented in TensorFlow/Keras.
+> Developed as a Software Engineering dissertation project at York St John University (2025–2026).
 
 ### Results Summary
 
