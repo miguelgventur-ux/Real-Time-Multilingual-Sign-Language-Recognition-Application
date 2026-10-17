@@ -95,7 +95,7 @@ Evaluates the trained model on the held-out test set. Outputs overall accuracy, 
 ```bash
 python realtime_multilingual_inference.py
 ```
-Launches the live desktop application. Point your webcam at your hands — the predicted sign and its language of origin (ASL / BSL / MUTUAL) are displayed on screen with a colour-coded language badge.
+Launches the live desktop application. Point your webcam at your hands; the predicted sign and its language of origin (ASL / BSL / MUTUAL) are displayed on screen with a colour-coded language badge.
 
 ---
 
