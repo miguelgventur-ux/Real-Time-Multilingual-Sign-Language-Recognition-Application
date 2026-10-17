@@ -121,7 +121,7 @@ A core contribution of this project is the identification and modelling of signs
 
 The 10 MUTUAL signs are: `me`, `you`, `drink`, `eat`, `baby`, `phone`, `car`, `cold`, `money`, `stand`.
 
-This design achieved **96.08% test accuracy** on the MUTUAL subset — the highest of the three language groups — and was invariant between augmented and non-augmented conditions, validating the pooling strategy.
+This design achieved **96.08% test accuracy** on the MUTUAL subset; the highest of the three language groups. It was invariant between augmented and non-augmented conditions, validating the pooling strategy.
 
 ---
 
@@ -141,10 +141,10 @@ This was a deliberate design constraint to validate the accessibility objective 
 
 Key libraries (see `requirements.txt` for full list):
 
-- `mediapipe` — hand landmark extraction
-- `tensorflow` / `keras` — model training and inference
-- `opencv-python` — webcam capture and UI rendering
-- `numpy`, `scikit-learn`, `matplotlib` — data processing and evaluation
+- `mediapipe`: hand landmark extraction
+- `tensorflow` / `keras`: model training and inference
+- `opencv-python`: webcam capture and UI rendering
+- `numpy`, `scikit-learn`, `matplotlib`:  data processing and evaluation
 
 ---
 
